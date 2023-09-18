@@ -1,0 +1,38 @@
+using System;
+using System.Net.Http;
+using System.Text;
+using Newtonsoft.Json.Linq;
+
+class Program
+{
+    private static readonly HttpClient httpClient = new HttpClient();
+
+    static async System.Threading.Tasks.Task Main()
+    {
+        var apiUrl = "https://api.example.com/data";
+
+        // Sending a GET request
+        string responseData = await SendGetRequest(apiUrl);
+        Console.WriteLine($"GET Response: {responseData}");
+
+        // Sending a POST request
+        var postData = new { key = "value" };
+        responseData = await SendPostRequest(apiUrl, postData);
+        Console.WriteLine($"POST Response: {responseData}");
+    }
+
+    private static async System.Threading.Tasks.Task<string> SendGetRequest(string url)
+    {
+        HttpResponseMessage response = await httpClient.GetAsync(url);
+        response.EnsureSuccessStatusCode(); // Throw an exception if not successful
+        return await response.Content.ReadAsStringAsync();
+    }
+
+    private static async System.Threading.Tasks.Task<string> SendPostRequest(string url, object data)
+    {
+        var content = new StringContent(JsonConvert.SerializeObject(data), Encoding.UTF8, "application/json");
+        HttpResponseMessage response = await httpClient.PostAsync(url, content);
+        response.EnsureSuccessStatusCode(); // Throw an exception if not successful
+        return await response.Content.ReadAsStringAsync();
+    }
+}

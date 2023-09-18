@@ -1,0 +1,49 @@
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using Newtonsoft.Json.Linq;
+
+class Program
+{
+    static async System.Threading.Tasks.Task Main()
+    {
+        var tokenEndpoint = "https://your-auth-server.com/oauth/token";
+        var clientId = "YOUR_CLIENT_ID";
+        var clientSecret = "YOUR_CLIENT_SECRET";
+
+        var accessToken = await GetAccessTokenAsync(tokenEndpoint, clientId, clientSecret);
+        Console.WriteLine($"Access Token: {accessToken}");
+    }
+
+    private static async System.Threading.Tasks.Task<string> GetAccessTokenAsync(string tokenEndpoint, string clientId, string clientSecret)
+    {
+        using (HttpClient httpClient = new HttpClient())
+        {
+            var tokenRequest = new HttpRequestMessage(HttpMethod.Post, tokenEndpoint);
+            tokenRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            
+            var requestContent = new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["grant_type"] = "client_credentials",
+                ["client_id"] = clientId,
+                ["client_secret"] = clientSecret
+            });
+            tokenRequest.Content = requestContent;
+
+            HttpResponseMessage tokenResponse = await httpClient.SendAsync(tokenRequest);
+            if (tokenResponse.IsSuccessStatusCode)
+            {
+                var jsonContent = await tokenResponse.Content.ReadAsStringAsync();
+                JObject jwtDynamic = JObject.Parse(jsonContent);
+                var accessToken = jwtDynamic.Value<string>("access_token");
+                return accessToken;
+            }
+            else
+            {
+                var errorContent = await tokenResponse.Content.ReadAsStringAsync();
+                throw new Exception($"Token request failed. Status Code: {tokenResponse.StatusCode}. Error Message: {errorContent}");
+            }
+        }
+    }
+}
